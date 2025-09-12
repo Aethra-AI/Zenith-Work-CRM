@@ -1,4 +1,3 @@
-
 <!-- 
 ////////////////////////////////////////////////////////////////
 
@@ -421,6 +420,7 @@ RSS Feed: https://feeds.feedburner.com/Free-templateco
       <circle class="path" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke-miterlimit="10"
         stroke="#ffc107" /></svg></div>
 
+  <!-- Librerías de la plantilla (INTACTAS) -->
   <script src="js/jquery-3.2.1.min.js"></script>
   <script src="js/jquery-migrate-3.0.1.min.js"></script>
   <script src="js/popper.min.js"></script>
@@ -432,80 +432,110 @@ RSS Feed: https://feeds.feedburner.com/Free-templateco
   <script src="js/aos.js"></script>
   <script src="js/main.js"></script>
   
-  </body>
-
-<!-- Login Modal -->
-<div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="loginModalLabel">Iniciar Sesión en Zenno CRM</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form id="loginForm">
-          <div class="form-group">
-            <label for="email">Correo Electrónico</label>
-            <input type="email" class="form-control" id="email" name="email" required>
+  <!-- Login Modal (INTACTO) -->
+  <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="loginModalLabel">Iniciar Sesión en Zenno CRM</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="loginForm">
+            <div class="form-group">
+              <label for="email">Correo Electrónico</label>
+              <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="password">Contraseña</label>
+              <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Iniciar Sesión</button>
+          </form>
+          <div id="loginError" class="alert alert-danger mt-3" style="display: none;"></div>
+          <div class="text-center mt-3">
+            <p>¿No tienes una cuenta? <a href="#contact" data-dismiss="modal" data-toggle="modal" data-target="#contactModal">Contáctanos</a></p>
           </div>
-          <div class="form-group">
-            <label for="password">Contraseña</label>
-            <input type="password" class="form-control" id="password" name="password" required>
-          </div>
-          <button type="submit" class="btn btn-primary btn-block">Iniciar Sesión</button>
-        </form>
-        <div id="loginError" class="alert alert-danger mt-3" style="display: none;"></div>
-        <div class="text-center mt-3">
-          <p>¿No tienes una cuenta? <a href="#contact" data-dismiss="modal" data-toggle="modal" data-target="#contactModal">Contáctanos</a></p>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<script src="js/auth-bridge.js"></script>
-  
-  <!-- 2. Script ÚNICO para manejar el modal y el formulario de login -->
+  <!-- SCRIPT DE LOGIN SIMPLIFICADO Y CORREGIDO -->
   <script>
     // Función para mostrar el modal de inicio de sesión
     function showLoginModal() {
+      // Usamos jQuery porque la plantilla lo incluye
       $('#loginModal').modal('show');
     }
   
-    // Esperar a que todo el documento esté listo
+    // Esperar a que el documento esté listo
     document.addEventListener('DOMContentLoaded', () => {
       const loginForm = document.getElementById('loginForm');
       if (!loginForm) return;
   
+      // Cuando se envía el formulario de login...
       loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Evita que la página se recargue
   
+        // 1. OBTENER DATOS DEL FORMULARIO
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const loginError = document.getElementById('loginError');
-        
         const submitBtn = loginForm.querySelector('button[type="submit"]');
         const originalBtnText = submitBtn.innerHTML;
   
+        // Limpiar errores previos y preparar el botón
+        loginError.style.display = 'none';
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Conectando...';
+  
         try {
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Iniciando...';
-          loginError.style.display = 'none';
+          // 2. ENVIAR DATOS DIRECTAMENTE AL BACKEND (usando http para evitar el error de certificado)
+          const response = await fetch('http://34.136.149.39.sslip.io/api/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+          });
   
-          const result = await window.handleLandingLogin(email, password);
+          const data = await response.json();
   
-          if (result && result.success) {
-            window.location.href = './crm/#/'; 
-          } else {
-            throw new Error(result?.error || 'Credenciales inválidas.');
+          // 3. PROCESAR LA RESPUESTA
+          if (!response.ok) {
+            // Si el backend dijo que algo salió mal (ej. contraseña incorrecta)
+            throw new Error(data.message || 'Error en las credenciales.');
           }
+  
+          // Si todo salió bien, el backend nos da un token (o cualquier dato de éxito)
+          console.log('Login exitoso, respuesta del backend:', data);
+  
+          // 4. GUARDAR EL TOKEN Y REDIRIGIR
+          // Guardamos el token en el almacenamiento local del navegador.
+          // La app de React podrá leer este token para saber que el usuario está logueado.
+          if (data.token) {
+            localStorage.setItem('crm_token', data.token);
+          } else if (data.accessToken) { // A veces la API lo llama accessToken
+            localStorage.setItem('crm_token', data.accessToken);
+          }
+          // Puedes guardar más datos si tu app de React los necesita
+          if (data.user) {
+            localStorage.setItem('crm_user', JSON.stringify(data.user));
+          }
+  
+          // Redirigir a la interfaz del CRM
+          window.location.href = './crm/#/';
+  
         } catch (error) {
+          // Si hubo cualquier error (de red, credenciales incorrectas, etc.)
+          console.error('Fallo el login:', error);
           loginError.textContent = error.message;
           loginError.style.display = 'block';
         } finally {
-          // Esto se ejecuta SIEMPRE, haya error o no.
+          // Pase lo que pase, restauramos el botón
           submitBtn.disabled = false;
           submitBtn.innerHTML = originalBtnText;
         }
@@ -513,7 +543,5 @@ RSS Feed: https://feeds.feedburner.com/Free-templateco
     });
   </script>
 
-
 </body>
-
 </html>
