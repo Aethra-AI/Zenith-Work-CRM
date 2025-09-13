@@ -431,7 +431,6 @@ RSS Feed: https://feeds.feedburner.com/Free-templateco
   <script src="js/jquery.stellar.min.js"></script>
   <script src="js/aos.js"></script>
   <script src="js/main.js"></script>
-  <script src="auth-bridge.js"></script>
 
 <!-- Login Modal -->
 <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true">
@@ -444,7 +443,7 @@ RSS Feed: https://feeds.feedburner.com/Free-templateco
         </button>
       </div>
       <div class="modal-body">
-        <form id="loginForm" onsubmit="return false;">
+        <form id="loginForm">
           <div class="form-group">
             <label for="email">Correo Electrónico</label>
             <input type="email" id="email" class="form-control" placeholder="tucorreo@ejemplo.com" required>
@@ -454,11 +453,11 @@ RSS Feed: https://feeds.feedburner.com/Free-templateco
             <input type="password" id="password" class="form-control" placeholder="••••••••" required>
           </div>
           <div id="error-message" class="text-danger"></div>
-          <div class="modal-footer px-0 pb-0">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-            <button type="submit" id="loginBtn" class="btn btn-primary">Ingresar</button>
-          </div>
         </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button type="button" id="loginBtn" class="btn btn-primary">Ingresar</button>
       </div>
     </div>
   </div>
@@ -472,61 +471,43 @@ function showLoginModal() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const loginForm = document.querySelector('#loginForm');
-  const loginBtn = document.getElementById('loginBtn');
-  const errorElement = document.getElementById('error-message');
-
-  // Verificar si ya está autenticado
-  const checkAuth = () => {
-    const token = localStorage.getItem('crm_token');
-    const expiry = localStorage.getItem('crm_token_expiry');
-    const isAuthenticated = token && (!expiry || parseInt(expiry) > Date.now());
-    
-    if (isAuthenticated) {
-      window.location.href = 'crm/#/dashboard';
-    }
-  };
-
-  // Verificar autenticación al cargar
-  checkAuth();
-
-  // Manejar envío del formulario
-  loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
+  document.getElementById('loginBtn').addEventListener('click', async () => {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    const originalText = loginBtn.innerHTML;
+    const errorMsg = document.getElementById('error-message');
+    const loginBtn = document.getElementById('loginBtn');
 
     if (!email || !password) {
-      errorElement.textContent = 'Por favor, ingresa el correo y la contraseña.';
-      errorElement.style.display = 'block';
+      errorMsg.textContent = 'Por favor, ingresa el correo y la contraseña.';
       return;
     }
 
     try {
-      // Mostrar estado de carga
       loginBtn.disabled = true;
-      loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Iniciando...';
-      errorElement.style.display = 'none';
+      loginBtn.textContent = 'Ingresando...';
+      errorMsg.textContent = '';
 
-      // Usar la función del puente de autenticación
-      const result = await window.handleLandingLogin(email, password);
-      
-      if (result && result.success) {
-        $('#loginModal').modal('hide');
-        // Redirigir al dashboard de la SPA
-        window.location.href = 'crm/#/dashboard';
-      } else {
-        throw new Error(result?.error || 'Error al iniciar sesión');
-      }
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error en las credenciales');
+      } 
+      // Guardar el token y redirigir
+      localStorage.setItem('crm_token', data.token);
+      $('#loginModal').modal('hide');
+      window.location.href = './crm/dist/#/';
+
     } catch (error) {
-      errorElement.textContent = error.message || 'Error al iniciar sesión. Intente nuevamente.';
-      errorElement.style.display = 'block';
-      console.error('Login error:', error);
+      errorMsg.textContent = error.message || 'Error al iniciar sesión.';
     } finally {
       loginBtn.disabled = false;
-      loginBtn.innerHTML = originalText;
+      loginBtn.textContent = 'Ingresar';
     }
   });
 });
