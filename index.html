@@ -431,60 +431,7 @@ RSS Feed: https://feeds.feedburner.com/Free-templateco
   <script src="js/jquery.stellar.min.js"></script>
   <script src="js/aos.js"></script>
   <script src="js/main.js"></script>
-  <script>
-    // Cargar auth-bridge.js dinámicamente
-    const script = document.createElement('script');
-    script.src = 'crm/auth-bridge.js';
-    script.onload = function() {
-      // Configurar el formulario de inicio de sesión después de cargar auth-bridge.js
-      const loginForm = document.getElementById('loginForm');
-      const loginError = document.getElementById('loginError');
-      
-      if (loginForm) {
-        loginForm.addEventListener('submit', async function(e) {
-          e.preventDefault();
-          
-          const email = document.getElementById('email').value;
-          const password = document.getElementById('password').value;
-          const submitBtn = this.querySelector('button[type="submit"]');
-          
-          if (!email || !password) {
-            loginError.textContent = 'Por favor ingresa tu correo y contraseña';
-            loginError.style.display = 'block';
-            return;
-          }
-          
-          try {
-            // Mostrar indicador de carga
-            const originalBtnText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Iniciando sesión...';
-            
-            // Intentar iniciar sesión
-            const result = await window.handleLandingLogin(email, password);
-            
-            if (result && result.success) {
-              // Redirección manejada por handleLandingLogin
-              window.location.href = '/crm';
-            } else {
-              throw new Error(result?.error || 'Error al iniciar sesión');
-            }
-          } catch (error) {
-            console.error('Error al iniciar sesión:', error);
-            loginError.textContent = error.message || 'Error al iniciar sesión. Por favor, inténtalo de nuevo.';
-            loginError.style.display = 'block';
-            
-            // Restaurar el botón
-            if (submitBtn) {
-              submitBtn.disabled = false;
-              submitBtn.innerHTML = originalBtnText;
-            }
-          }
-        });
-      }
-    };
-    document.body.appendChild(script);
-  </script>
+  
   </body>
 
 <!-- Login Modal -->
@@ -518,91 +465,54 @@ RSS Feed: https://feeds.feedburner.com/Free-templateco
   </div>
 </div>
 
-<!-- Cargar el script de autenticación -->
-<script src="/Zenith-Work-CRM/crm/auth-bridge.js"></script>
-
-<script>
-  // Función para mostrar el modal de inicio de sesión
-  function showLoginModal() {
-    $('#loginModal').modal('show');
-  }
-
-  // Verificar autenticación al cargar la página
-  document.addEventListener('DOMContentLoaded', () => {
-    // Verificar si el usuario ya está autenticado
-    const authStatus = window.checkAuthStatus ? window.checkAuthStatus() : { isAuthenticated: false };
-    
-    if (authStatus.isAuthenticated) {
-      // Si el usuario está autenticado, redirigir al dashboard
-      window.location.href = '/cardboard-master/dashboard';
-      return;
+<script src="js/auth-bridge.js"></script>
+  
+  <!-- 2. Script ÚNICO para manejar el modal y el formulario de login -->
+  <script>
+    // Función para mostrar el modal de inicio de sesión
+    function showLoginModal() {
+      $('#loginModal').modal('show');
     }
-
-    // Configurar el formulario de inicio de sesión
-    const loginForm = document.getElementById('loginForm');
-    const loginError = document.getElementById('loginError');
-    
-    if (loginForm) {
+  
+    // Esperar a que todo el documento esté listo
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginForm = document.getElementById('loginForm');
+      if (!loginForm) return;
+  
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+  
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+        const loginError = document.getElementById('loginError');
         
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+  
         try {
-          // Mostrar indicador de carga
-          const submitBtn = loginForm.querySelector('button[type="submit"]');
-          const originalBtnText = submitBtn.innerHTML;
           submitBtn.disabled = true;
-          submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Iniciando sesión...';
-          
-          // Intentar iniciar sesión
+          submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Iniciando...';
+          loginError.style.display = 'none';
+  
           const result = await window.handleLandingLogin(email, password);
-          
+  
           if (result && result.success) {
-            // Redirección manejada por handleLandingLogin
+            window.location.href = './crm/#/'; 
           } else {
-            throw new Error(result?.error || 'Error al iniciar sesión');
+            throw new Error(result?.error || 'Credenciales inválidas.');
           }
         } catch (error) {
-          console.error('Error al iniciar sesión:', error);
-          loginError.textContent = error.message || 'Error al iniciar sesión. Por favor, inténtalo de nuevo.';
+          loginError.textContent = error.message;
           loginError.style.display = 'block';
-          
-          // Restaurar el botón
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnText;
-          }
+        } finally {
+          // Esto se ejecuta SIEMPRE, haya error o no.
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
         }
       });
-    }
-    
-    // Cerrar sesión si se recibe el parámetro logout
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('logout') === 'true') {
-      try {
-        if (window.handleLogout) {
-          window.handleLogout();
-        } else {
-          // Fallback en caso de que el script no se haya cargado
-          localStorage.removeItem('crm_token');
-          localStorage.removeItem('crm_refresh_token');
-          localStorage.removeItem('crm_token_expiry');
-        }
-      } catch (error) {
-        console.error('Error al cerrar sesión:', error);
-      }
-    }
-    
-    // Restaurar el botón de inicio de sesión si existe
-    const loginBtn = document.getElementById('loginBtn');
-    if (loginBtn) {
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Ingresar';
-    }
-  });
-</script>
+    });
+  </script>
+
 
 </body>
 
