@@ -6,7 +6,7 @@ window.handleLandingLogin = async (email, password) => {
   try {
     console.log('Iniciando proceso de login para:', email);
     
-    const response = await fetch(`/api/auth/login`, {
+    const response = await fetch(`https://34.136.149.39.sslip.io/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
