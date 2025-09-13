@@ -483,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isAuthenticated = token && (!expiry || parseInt(expiry) > Date.now());
     
     if (isAuthenticated) {
-      window.location.href = 'crm/#/dashboard';
+      window.location.href = 'crm/dist/#/dashboard';
     }
   };
 
@@ -516,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (result && result.success) {
         $('#loginModal').modal('hide');
         // Redirigir al dashboard de la SPA
-        window.location.href = 'crm/#/dashboard';
+        window.location.href = 'crm/dist/#/dashboard';
       } else {
         throw new Error(result?.error || 'Error al iniciar sesión');
       }
