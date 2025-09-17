@@ -13,7 +13,7 @@ window.handleLandingLogin = async (email, password) => {
     }
     
     const data = await response.json();
-    localStorage.setItem('crm_token', data.accessToken);
+    localStorage.setItem('crm_token', data.token);
     localStorage.setItem('crm_refresh_token', data.refreshToken);
     localStorage.setItem('crm_token_expiry', 
       (Date.now() + (data.expiresIn * 1000)).toString()
