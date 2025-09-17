@@ -45,6 +45,16 @@ RSS Feed: https://feeds.feedburner.com/Free-templateco
 
   <!-- Theme Style -->
   <link rel="stylesheet" href="css/style.css">
+  <!-- Añadir esto en el <head> de tu /index.html (landing page) -->
+  <script>
+    (function(){
+      var redirect = sessionStorage.redirect;
+      delete sessionStorage.redirect;
+      if (redirect && redirect != location.href) {
+        history.replaceState(null, null, redirect);
+      }
+    })();
+  </script>
 
 </head>
 
